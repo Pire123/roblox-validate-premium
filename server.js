@@ -5,7 +5,7 @@ const { URL } = require("url");
 const StringDecoder = require("string_decoder").StringDecoder;
 
 const PORT = process.env.PORT;
-const DomainAddress = process.env.PROJECT_DOMAIN + ".glitch.me";
+const DomainAddress = "https://roblox-validate-premium.up.railway.app/";
 
 const server = http.createServer();
 
