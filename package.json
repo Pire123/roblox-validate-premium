@@ -1,10 +1,11 @@
 {
-  "name": "http-nodejs",
-  "version": "1.0.0",
-  "main": "index.js",
-  "author": "Aiden Bai",
-  "license": "MIT",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.js"
+  },
+  "dependencies": {
+  },
+  "engines": {
+    "node": "14.x"
   }
 }
