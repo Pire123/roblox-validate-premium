@@ -1,4 +1,5 @@
 {
+  "name":"haha xd val",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
