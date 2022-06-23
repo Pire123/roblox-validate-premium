@@ -5,85 +5,148 @@ const { URL } = require("url");
 const StringDecoder = require("string_decoder").StringDecoder;
 
 const PORT = process.env.PORT;
-const DomainAddress = "https://roblox-validate-premium.up.railway.app/";
+//const DomainAddress = process.env.PROJECT_DOMAIN + ".glitch.me";
 
 const server = http.createServer();
 
-const User_Agent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36";
+const User_Agent =
+  "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36";
 
 function isNumeric(num) {
   return !isNaN(num);
+}
+
+function isEmpty(hahaxd) {
+  hahaxd = hahaxd.trim();
+  if (hahaxd == null || hahaxd == "") {
+    return true;
+  }
+  return false;
 }
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-const requestListener = function (request, response) {
-  var userid = request.url.substring(1);
+function getPre(userid, options, callback) {
+  https
+    .request(options, function (req) {
+      var str = "";
 
-  var randomuser = getRandomInt(1e9);
+      req.on("data", function (ch) {
+        str += ch;
+      });
+
+      req.on("end", function () {
+        let ispre = str.toString().includes("icon-premium").toString();
+
+        callback(ispre);
+      });
+    })
+    .end();
+}
+
+const requestListener = async function (request, response) {
+  var userids = request.url.substring(1);
+
+  var waiting = 0;
+
+  var quee = [];
+
+  const randomuser = getRandomInt(1e9);
 
   var gotrandom = false;
 
-  if (userid == null || userid == "" || userid == " " || !isNumeric(userid)) {
-    //console.log("user id is not defined in path");
+  if (userids.includes(",")) {
+    const list = userids.split(",");
 
-    gotrandom = true;
+    console.log("multi id");
 
-    userid = randomuser;
-  }
+    // const len = list.length
 
-  let content = null;
+    list.forEach((id, index) => {
+      if (isNumeric(id) && !isEmpty(id)) {
+        waiting = waiting + 1;
 
-  https
-    .request(
-      {
-        hostname: "www.roblox.com",
-        path: "/users/" + userid + "/profile",
-        method: "GET",
-        headers: {
-          "Content-Type": "text/html",
-          "user-agent" : User_Agent
-        },
-      },
-      function (req) {
-        var str = "";
-        req.on("data", function (ch) {
-          str += ch;
-        });
+        const options = {
+          hostname: "www.roblox.com",
+          path: "/users/" + id + "/profile",
+          method: "GET",
+          headers: {
+            "Content-Type": "text/html",
+            "user-agent": User_Agent,
+          },
+        };
 
-        req.on("end", function () {
-          let ispre = str.toString().includes("icon-premium");
+        getPre(id, options, (pre) => {
+          quee[index] = pre;
+          waiting = waiting - 1;
 
-          content = ispre.toString();
-
-          if (gotrandom) {
-            response.writeHead(404);
-            response.write(
-              "usage: " +
-                DomainAddress +
-                "/USERID" +
-                "\r\n" +
-                "example: \r\n\nRequest:\nGET " +
-                DomainAddress +
-                "/" +
-                randomuser +
-                "\r\n\n" +
-                "Response:" +
-                "\r\n" +
-                content
-            );
-            response.end();
-          } else {
+          if (waiting == 0) {
             response.writeHead(200);
-            response.write(content);
+            response.write(quee.toString());
             response.end();
           }
         });
       }
-    )
-    .end();
+    });
+  } else if (isNumeric(userids) && !isEmpty(userids)) {
+    waiting = waiting + 1;
+
+    let options = {
+      hostname: "www.roblox.com",
+      path: "/users/" + userids + "/profile",
+      method: "GET",
+      headers: {
+        "Content-Type": "text/html",
+        "user-agent": User_Agent,
+      },
+    };
+
+    getPre(userids, options, (premium) => {
+      waiting = waiting - 1;
+
+      response.writeHead(200);
+      response.write(premium);
+      response.end();
+    });
+  } else {
+    gotrandom = true;
+    userids = randomuser;
+
+    waiting = waiting + 1;
+
+    let options = {
+      hostname: "www.roblox.com",
+      path: "/users/" + userids + "/profile",
+      method: "GET",
+      headers: {
+        "Content-Type": "text/html",
+        "user-agent": User_Agent,
+      },
+    };
+
+    getPre(userids, options, (premium) => {
+      waiting = waiting - 1;
+
+      response.writeHead(404);
+      response.write(
+        "usage: " +
+          process.env.domain +
+          "/USERID" +
+          "\r\n" +
+          "example: \r\n\nRequest:\nGET " +
+          process.env.domain +
+          "/" +
+          randomuser +
+          "(,..,...,...)\r\n\n" +
+          "Response:" +
+          "\r\n" +
+          premium
+      );
+      response.end();
+    });
+  }
 };
 
 server.on("request", requestListener);
